@@ -7,108 +7,59 @@ Original file is located at
     https://colab.research.google.com/drive/11Qa4mMjzWBqNQu0NBw0ozM3aKBHhfCP_
 """
 
-# random number generator
+# lu decomposition method to solve linear equations
 
-def rand_lcg(seed, a=1103515245, c=12345, m=32768):  # LCG
-	return ((a * seed + c) % m) / m
+def lu_decomp(A,b,n):
+    L = [[0 for x in range(n)] for y in range(n)]
+    U = [[0 for x in range(n)] for y in range(n)]
 
-# LU decomposition:
+    for j in range(0,n):
+        for i in range(0,n):
+            sum = 0
+            for k in range(0,i):
+                sum += L[i][k] * U[k][j]
+            U[i][j] = A[i][j] - sum
+        for i in range(0,n):
+            sum = 0
+            for k in range(0,j):
+                sum += L[i][k] * U[k][j]
+            L[i][j] = (1 / U[j][j]) * (A[i][j] - sum)
+    for i in range(0,n):
+        sum = 0
+        for j in range(0,i):
+            sum += L[i][j] * b[j]
+        b[i] = b[i] - sum
+    for i in range(n-1,-1,-1):
+        sum = 0
+        for j in range(i+1,n):
+            sum += U[i][j] * b[j]
+        b[i] = round((b[i] - sum) / U[i][i],3)
+    print(b)
 
-def LU_decomp(A, B):
-     L = [[0 for j in range(len(A[0]))] for i in range(len(A))]       # forming L and U matrices
-     for i in range(len(L)):
-         for j in range(len(L[0])):
-             if i == j:
-                  L[i][j] = 1
-     U = [[0 for j in range(len(A[0]))] for i in range(len(A))]
-     for j in range(len(A[0])):
-         U[0][j] = A[0][j]
+def transpose(L,n):
+    U = [[L[j][i] for j in range(len(L))] for i in range(len(L[0]))]
+    return U
 
-     for i in range (0,len(A)):                                       # To calculate matrix elements of L and U
-         for j in range(0,len(A[0])):
-             sum1=0.0
-             sum2=0.0
-             if j>=i:
-                 for k in range(0,len(A)):
-                     if k != i:
-                         sum1 += (L[i][k]*U[k][j])
-                 U[i][j] = A[i][j]-sum1
-             if j<i:
-                 for l in range (0,len(A)):
-                     if l!=j:
-                         sum2 += (L[i][l]*U[l][j])
-                 L[i][j] = (A[i][j]-sum2)/U[j][j]
-     Y = [[0 for j in range(len(B[0]))] for i in range(len(B))]       # forward substitution
-     for i in range(len(B)):
-          sum = 0
-          for j in range(i):
-               sum += L[i][j]*Y[j][0]
-          Y[i][0] = (B[i][0] - sum)/L[i][i]
-     X = [[0 for j in range(len(B[0]))] for i in range(len(B))]       # backward substitution
-     for i in range (len(B), 0, -1):
-          sum1 = 0
-          for j in range (i, len(B)):
-               sum1 += (U[i-1][j]*X[j][0])
-          X[i-1][0] = ((Y[i-1][0]-sum1)/U[i-1][i-1])
-     return X
+# random number generator which stores output in array
 
-def partial_pivot(a,b,n):
-    count = 0   # keeps a track of number of exchanges (odd number of exchanges adds a phase of -1 to determinant)
-    for i in range(n-1):
-        if abs(a[i][i]) == 0:
-            for j in range(i+1,n):
-                if abs(a[j][i]) > abs(a[i][i]):
-                    a[j], a[i] = a[i], a[j]  # interchange ith and jth rows of matrix 'a'
-                    count += 1
-                    b[j], b[i] = b[i], b[j]  # interchange ith and jth elements of vector 'b'
+def rand_lcg(r0: float, n: int):
+  a = 1103515245
+  c = 12345
+  m = 32768
+  l = []
 
-    return a, b, count
-    
-def crout(a):
-    U = [[0 for i in range(5)] for j in range(5)]
-    L = [[0 for i in range(5)] for j in range(5)]
-    B = [[0 for i in range(5)] for j in range(5)]
-    for i in range(5):
-        L[i][i] = 1
+  for i in range (0, n):
+    r0 = float(((a*r0 + c) % m)/m)
+    l.append(r0)
+  return l
 
-    for j in range(5):
-        for i in range(5):
-            total = 0
-            for k in range(i):
-                total += L[i][k] * U[k][j]
-
-            if i == j:
-                U[i][j] = a[i][j] - total
-
-            elif i > j:
-                L[i][j] = (a[i][j] - total)/U[j][j]
-
-            else :
-                U[i][j] = a[i][j] - total
-
-    return U, L
-
-def determinant(a):
-    b = [0 for i in range(4)]
-    a, b, count = partial_pivot(a, b, 4)
-    U = crout(a)[0]
-    det = 1
-    for i in range(4):
-       det *= U[i][i]
-
-    # if even number of row exchanges, determinant remains the same, else is multiplied by -1
-    if count % 2 == 0:
-        return det
-    else:
-        return -det
-
-# Derivation function
+# derivative
 
 def derivative(f, x0, tol=1e-6):
     df = (f(x0+tol) - f(x0-tol))/(2*tol)
     return df
 
-# Double derivative
+# double derivative
 
 def double_derivative(f, x0, tol=1e-6):
     f1 = derivative(f, x0) + tol
@@ -116,7 +67,7 @@ def double_derivative(f, x0, tol=1e-6):
     ddf = (f1-f0)/(2*tol)
     return ddf
 
-# Newton-Raphson method of finding roots
+# newton-Raphson method of finding roots
 
 def newton_raphson(f, x0, tol):
     iterations = []
@@ -130,6 +81,8 @@ def newton_raphson(f, x0, tol):
 
         if abs(x0 - x_prev)<tol:
             return x0, abs_error, iterations
+
+# simpson integration scheme
 
 def simpson(f, a, b, n):
     if n%2 == 1:
@@ -148,23 +101,55 @@ def simpson(f, a, b, n):
         x += h
     return (h/3)*sum
 
+# RK4 method
+
+def runge_kutta(x, v, t, dxdt, dvdt, tn):
+    dt = 0.01
+    X = []
+    V = []
+    T = []
+    while t < tn:
+        k1x = dt*dxdt(x,v,t)
+        k1v = dt*dvdt(x,v,t)
+
+        k2x = dt*dxdt(x+k1x/2,(v+k1v/2),(t+dt/2))
+        k2v = dt*dvdt((x+k1x/2),v+k1v/2,(t+dt/2))
+
+        k3x = dt*dxdt(x+k2x/2,(v+k2v/2),(t+dt/2))
+        k3v = dt*dvdt((x+k2x/2),v+k2v/2,(t+dt/2))
+
+        k4x = dt*dxdt(x+k3x,(v+k3v),(t+dt))
+        k4v = dt*dvdt((x+k3x),v+k3v,(t+dt))
+
+        kx = (k1x+2*k2x+2*k3x+k4x)/6
+        kv = (k1v+2*k2v+2*k3v+k4v)/6
+        x = x + kx
+        X.append(x)
+        v = v + kv
+        V.append(v)
+        t += dt
+        T.append(t)
+    plt.plot(X,V)
+    plt.xlabel("Height (h)")
+    plt.ylabel("Velocity (v)")
+
 def eigen(A,x0,xk):
     k = 500
     y = np.matrix(x0)
     for i in range(0,k):
         sum = 0
         for j in range(0,3):
-            sum += y[0,j]*x0[0,j]
+            sum += y[0,j] * x0[0,j]
         xky = (sum)
         for l in range(0,3):
             sum = 0
             for j in range(0,3):
-                sum += A[l,j]*x0[0,j]
+                sum += A[l,j] * x0[0,j]
             xk[0,l] = (sum)
         x0 = np.matrix(xk)
         sum = 0
         for j in range(0,3):
-            sum += y[0,j]*xk[0,j]
+            sum += y[0,j] * xk[0,j]
         xk1y = (sum)
         if i == 0:
             l0 = (sum)
@@ -172,15 +157,10 @@ def eigen(A,x0,xk):
             if xky == 0:
                 break
             lk = xk1y/xky
-            if abs(lk-l0)<10**-3:
+            if abs(lk - l0) < (10**-3):
                 break
             l0 = lk
     return lk,xk
-
-def read_matrix(file):
-    with open(file, 'r') as f:
-        a = [[int(num) for num in line.split(' ')] for line in f]
-    return a
 
 def give_X(B):
     X = [[B[i][len(B)] for j in range(1)] for i in range(len(B))]
@@ -202,7 +182,7 @@ def gj_elim(M):
             for q in range(len(M[0])-1, 0, -1):
                 M[j][q] = M[j][q] - M[j][i]*M[i][q]
     return M
-
+    
 def polyfit(x, y, o): # o is the max order of polynomial
     N = []
     for i in range(o):
